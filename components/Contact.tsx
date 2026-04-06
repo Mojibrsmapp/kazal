@@ -1,13 +1,77 @@
 
 import React, { useState } from 'react';
+import axios from 'axios';
 import { CONTACT_INFO } from '../constants';
-import { Mail, Phone, MapPin, Facebook, Youtube, Printer, Users, Send, UserPlus } from 'lucide-react';
+import { Mail, Phone, MapPin, Facebook, Youtube, Printer, Users, Send, UserPlus, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 
 const Contact: React.FC = () => {
   const [formType, setFormType] = useState<'Message' | 'Volunteer'>('Message');
   const [designation, setDesignation] = useState('কোনো পদ নেই');
+  const [isLoading, setIsLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
+
+  // Message Form State
+  const [msgName, setMsgName] = useState('');
+  const [msgPhone, setMsgPhone] = useState('');
+  const [msgText, setMsgText] = useState('');
+
+  // Volunteer Form State
+  const [volName, setVolName] = useState('');
+  const [volAge, setVolAge] = useState('');
+  const [volArea, setVolArea] = useState('সদর');
+  const [volPhone, setVolPhone] = useState('');
+  const [volOtherDesignation, setVolOtherDesignation] = useState('');
+
+  const handleMessageSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+    try {
+      await axios.post('/api/contact', {
+        name: msgName,
+        phone: msgPhone,
+        message: msgText,
+        type: 'Message'
+      });
+      setSuccess(true);
+      setMsgName('');
+      setMsgPhone('');
+      setMsgText('');
+    } catch (err) {
+      setError('Failed to send message. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVolunteerSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+    try {
+      await axios.post('/api/contact', {
+        name: volName,
+        phone: volPhone,
+        age: parseInt(volAge),
+        area: volArea,
+        designation: designation === 'অন্যান্য' ? volOtherDesignation : designation,
+        message: 'Joined as a volunteer',
+        type: 'Volunteer'
+      });
+      setSuccess(true);
+      setVolName('');
+      setVolAge('');
+      setVolPhone('');
+      setVolOtherDesignation('');
+    } catch (err) {
+      setError('Failed to join. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <section id="contact" className="section-container relative overflow-hidden">
@@ -138,7 +202,7 @@ const Contact: React.FC = () => {
                 "flex-1 py-3 px-4 rounded-xl font-bold text-sm md:text-base transition-all duration-300 flex items-center justify-center gap-2",
                 formType === 'Message' ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"
               )}
-              onClick={() => setFormType('Message')}
+              onClick={() => { setFormType('Message'); setSuccess(false); setError(''); }}
             >
               <Send size={18} />
               বার্তা পাঠান
@@ -148,110 +212,179 @@ const Contact: React.FC = () => {
                 "flex-1 py-3 px-4 rounded-xl font-bold text-sm md:text-base transition-all duration-300 flex items-center justify-center gap-2",
                 formType === 'Volunteer' ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"
               )}
-              onClick={() => setFormType('Volunteer')}
+              onClick={() => { setFormType('Volunteer'); setSuccess(false); setError(''); }}
             >
               <UserPlus size={18} />
               ভলান্টিয়ার হোন
             </button>
           </div>
 
-          <AnimatePresence mode="wait">
-            {formType === 'Message' ? (
-              <motion.form 
-                key="message"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="space-y-6" 
-                onSubmit={(e) => e.preventDefault()}
-              >
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700 ml-1">আপনার নাম</label>
-                  <input type="text" className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" placeholder="নাম লিখুন" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700 ml-1">ফোন নম্বর</label>
-                  <input type="text" className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" placeholder="ফোন নম্বর" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700 ml-1">বার্তা</label>
-                  <textarea rows={4} className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" placeholder="আপনার মতামত বা পরামর্শ লিখুন..."></textarea>
-                </div>
-                <button type="submit" className="w-full btn-primary py-4 text-lg">
-                  বার্তা প্রেরণ করুন
-                </button>
-              </motion.form>
-            ) : (
-              <motion.form 
-                key="volunteer"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="space-y-6" 
-                onSubmit={(e) => e.preventDefault()}
-              >
-                <div className="p-5 bg-primary/5 rounded-2xl text-sm text-primary font-medium flex items-start gap-3 border border-primary/10">
-                  <Users size={20} className="shrink-0" />
-                  আমাদের নির্বাচনী প্রচারণায় স্বেচ্ছাসেবী হিসেবে যোগ দিন এবং পরিবর্তনের অংশ হোন।
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700 ml-1">আপনার নাম</label>
-                  <input type="text" className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" placeholder="পূর্ণ নাম" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-slate-700 ml-1">বয়স</label>
-                    <input type="number" className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" placeholder="বয়স" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-slate-700 ml-1">উপজেলা</label>
-                    <select className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all appearance-none cursor-pointer">
-                      <option>সদর</option>
-                      <option>রামু</option>
-                      <option>ঈদগাঁও</option>
-                    </select>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700 ml-1">বর্তমান পদবী</label>
-                  <select 
-                    className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all appearance-none cursor-pointer"
-                    value={designation}
-                    onChange={(e) => setDesignation(e.target.value)}
-                  >
-                    <option value="কোনো পদ নেই">কোনো পদ নেই</option>
-                    <option value="সদস্য">সদস্য</option>
-                    <option value="কর্মী">কর্মী</option>
-                    <option value="সভাপতি">সভাপতি</option>
-                    <option value="সাধারণ সম্পাদক">সাধারণ সম্পাদক</option>
-                    <option value="অন্যান্য">অন্যান্য</option>
-                  </select>
-                  
-                  <AnimatePresence>
-                    {designation === 'অন্যান্য' && (
-                      <motion.input 
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        type="text" 
-                        className="w-full mt-2 px-5 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" 
-                        placeholder="আপনার পদবী লিখুন" 
-                      />
-                    )}
-                  </AnimatePresence>
-                </div>
+          {success && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="p-6 bg-green-50 border border-green-100 rounded-2xl text-green-700 text-center mb-8"
+            >
+              <h4 className="font-bold mb-2">ধন্যবাদ!</h4>
+              <p className="text-sm">আপনার বার্তাটি সফলভাবে পাঠানো হয়েছে। আমরা শীঘ্রই আপনার সাথে যোগাযোগ করব।</p>
+              <button onClick={() => setSuccess(false)} className="mt-4 text-xs font-bold underline">আরেকটি বার্তা পাঠান</button>
+            </motion.div>
+          )}
 
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700 ml-1">মোবাইল নম্বর</label>
-                  <input type="text" className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" placeholder="সচল মোবাইল নম্বর" />
-                </div>
-                <button type="submit" className="w-full btn-primary py-4 text-lg">
-                  টিমে যোগ দিন
-                </button>
-              </motion.form>
-            )}
-          </AnimatePresence>
+          {error && (
+            <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-sm text-center mb-8">
+              {error}
+            </div>
+          )}
+
+          {!success && (
+            <AnimatePresence mode="wait">
+              {formType === 'Message' ? (
+                <motion.form 
+                  key="message"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="space-y-6" 
+                  onSubmit={handleMessageSubmit}
+                >
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700 ml-1">আপনার নাম</label>
+                    <input 
+                      type="text" 
+                      required
+                      value={msgName}
+                      onChange={(e) => setMsgName(e.target.value)}
+                      className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" 
+                      placeholder="নাম লিখুন" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700 ml-1">ফোন নম্বর</label>
+                    <input 
+                      type="text" 
+                      required
+                      value={msgPhone}
+                      onChange={(e) => setMsgPhone(e.target.value)}
+                      className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" 
+                      placeholder="ফোন নম্বর" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700 ml-1">বার্তা</label>
+                    <textarea 
+                      rows={4} 
+                      required
+                      value={msgText}
+                      onChange={(e) => setMsgText(e.target.value)}
+                      className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" 
+                      placeholder="আপনার মতামত বা পরামর্শ লিখুন..."
+                    ></textarea>
+                  </div>
+                  <button type="submit" disabled={isLoading} className="w-full btn-primary py-4 text-lg flex items-center justify-center gap-2">
+                    {isLoading ? <Loader2 className="animate-spin" /> : 'বার্তা প্রেরণ করুন'}
+                  </button>
+                </motion.form>
+              ) : (
+                <motion.form 
+                  key="volunteer"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="space-y-6" 
+                  onSubmit={handleVolunteerSubmit}
+                >
+                  <div className="p-5 bg-primary/5 rounded-2xl text-sm text-primary font-medium flex items-start gap-3 border border-primary/10">
+                    <Users size={20} className="shrink-0" />
+                    আমাদের নির্বাচনী প্রচারণায় স্বেচ্ছাসেবী হিসেবে যোগ দিন এবং পরিবর্তনের অংশ হোন।
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700 ml-1">আপনার নাম</label>
+                    <input 
+                      type="text" 
+                      required
+                      value={volName}
+                      onChange={(e) => setVolName(e.target.value)}
+                      className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" 
+                      placeholder="পূর্ণ নাম" 
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-slate-700 ml-1">বয়স</label>
+                      <input 
+                        type="number" 
+                        required
+                        value={volAge}
+                        onChange={(e) => setVolAge(e.target.value)}
+                        className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" 
+                        placeholder="বয়স" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-slate-700 ml-1">উপজেলা</label>
+                      <select 
+                        value={volArea}
+                        onChange={(e) => setVolArea(e.target.value)}
+                        className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all appearance-none cursor-pointer"
+                      >
+                        <option value="সদর">সদর</option>
+                        <option value="রামু">রামু</option>
+                        <option value="ঈদগাঁও">ঈদগাঁও</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700 ml-1">বর্তমান পদবী</label>
+                    <select 
+                      className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all appearance-none cursor-pointer"
+                      value={designation}
+                      onChange={(e) => setDesignation(e.target.value)}
+                    >
+                      <option value="কোনো পদ নেই">কোনো পদ নেই</option>
+                      <option value="সদস্য">সদস্য</option>
+                      <option value="কর্মী">কর্মী</option>
+                      <option value="সভাপতি">সভাপতি</option>
+                      <option value="সাধারণ সম্পাদক">সাধারণ সম্পাদক</option>
+                      <option value="অন্যান্য">অন্যান্য</option>
+                    </select>
+                    
+                    <AnimatePresence>
+                      {designation === 'অন্যান্য' && (
+                        <motion.input 
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          type="text" 
+                          required
+                          value={volOtherDesignation}
+                          onChange={(e) => setVolOtherDesignation(e.target.value)}
+                          className="w-full mt-2 px-5 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" 
+                          placeholder="আপনার পদবী লিখুন" 
+                        />
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700 ml-1">মোবাইল নম্বর</label>
+                    <input 
+                      type="text" 
+                      required
+                      value={volPhone}
+                      onChange={(e) => setVolPhone(e.target.value)}
+                      className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" 
+                      placeholder="সচল মোবাইল নম্বর" 
+                    />
+                  </div>
+                  <button type="submit" disabled={isLoading} className="w-full btn-primary py-4 text-lg flex items-center justify-center gap-2">
+                    {isLoading ? <Loader2 className="animate-spin" /> : 'টিমে যোগ দিন'}
+                  </button>
+                </motion.form>
+              )}
+            </AnimatePresence>
+          )}
         </motion.div>
 
       </div>

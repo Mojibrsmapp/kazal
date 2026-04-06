@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { NAV_LINKS } from '../constants';
 import { Menu, X } from 'lucide-react';
 import { NavLink, Link } from 'react-router-dom';
@@ -9,14 +10,25 @@ import { cn } from '../lib/utils';
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [settings, setSettings] = useState<any>({});
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
     window.addEventListener('scroll', handleScroll);
+    fetchSettings();
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const response = await axios.get('/api/settings');
+      setSettings(response.data);
+    } catch (err) {
+      console.error('Failed to fetch settings', err);
+    }
+  };
 
   return (
     <nav 
@@ -35,19 +47,24 @@ const Navbar: React.FC = () => {
       >
         <div className="flex justify-between items-center">
           {/* Brand */}
-          <Link to="/" className="flex flex-col group relative z-50">
-            <span className={cn(
-              "text-xl md:text-2xl font-display font-bold leading-none transition-colors duration-300",
-              isScrolled ? "text-primary" : "text-slate-900"
-            )}>
-              লুৎফুর রহমান <span className="text-secondary">কাজল</span>
-            </span>
-            <span className={cn(
-              "text-[10px] md:text-xs font-medium tracking-widest uppercase mt-1 transition-colors duration-300",
-              isScrolled ? "text-slate-500" : "text-slate-600"
-            )}>
-              Member of Parliament | Cox's Bazar-3
-            </span>
+          <Link to="/" className="flex items-center gap-3 group relative z-50">
+            {settings.site_logo && (
+              <img src={settings.site_logo} alt="Logo" className="h-10 w-auto object-contain" />
+            )}
+            <div className="flex flex-col">
+              <span className={cn(
+                "text-xl md:text-2xl font-display font-bold leading-none transition-colors duration-300",
+                isScrolled ? "text-primary" : "text-slate-900"
+              )}>
+                {settings.site_name || 'লুৎফুর রহমান কাজল'}
+              </span>
+              <span className={cn(
+                "text-[10px] md:text-xs font-medium tracking-widest uppercase mt-1 transition-colors duration-300",
+                isScrolled ? "text-slate-500" : "text-slate-600"
+              )}>
+                Member of Parliament | Cox's Bazar-3
+              </span>
+            </div>
           </Link>
 
           {/* Desktop Menu */}
@@ -67,12 +84,6 @@ const Navbar: React.FC = () => {
                 <span className="absolute bottom-1 left-4 right-4 h-0.5 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
               </NavLink>
             ))}
-            <Link 
-              to="/contact" 
-              className="ml-4 btn-primary py-2 text-sm"
-            >
-              Contact
-            </Link>
           </div>
 
           {/* Mobile Menu Button */}

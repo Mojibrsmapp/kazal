@@ -1,8 +1,24 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { motion } from 'motion/react';
 import { Facebook, Youtube, Twitter, Instagram, ArrowUp, Heart } from 'lucide-react';
 
 const Footer: React.FC = () => {
+  const [settings, setSettings] = useState<any>({});
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const response = await axios.get('/api/settings');
+      setSettings(response.data);
+    } catch (err) {
+      console.error('Failed to fetch settings', err);
+    }
+  };
+
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -18,18 +34,22 @@ const Footer: React.FC = () => {
           <div className="lg:col-span-2 space-y-8">
             <div>
               <h2 className="text-3xl font-display font-black mb-4 tracking-tight">
-                লুৎফুর রহমান <span className="text-gradient">কাজল</span>
+                {settings.site_name || 'লুৎফুর রহমান কাজল'}
               </h2>
               <p className="text-slate-400 max-w-md text-lg leading-relaxed bengali-text">
-                সংসদ সদস্য (১৩তম জাতীয় সংসদ), কক্সবাজার-৩। <br/>
-                দেশের উন্নয়ন ও মানুষের কল্যাণে নিবেদিত প্রাণ। কক্সবাজারের গণমানুষের আস্থার প্রতীক।
+                {settings.footer_text || (
+                  <>
+                    সংসদ সদস্য (১৩তম জাতীয় সংসদ), কক্সবাজার-৩। <br/>
+                    দেশের উন্নয়ন ও মানুষের কল্যাণে নিবেদিত প্রাণ। কক্সবাজারের গণমানুষের আস্থার প্রতীক।
+                  </>
+                )}
               </p>
             </div>
             
             <div className="flex gap-4">
               {[
-                { icon: <Facebook size={20} />, href: "#", color: "hover:bg-[#1877F2]" },
-                { icon: <Youtube size={20} />, href: "#", color: "hover:bg-[#FF0000]" },
+                { icon: <Facebook size={20} />, href: settings.facebook_url || "#", color: "hover:bg-[#1877F2]" },
+                { icon: <Youtube size={20} />, href: settings.youtube_url || "#", color: "hover:bg-[#FF0000]" },
                 { icon: <Twitter size={20} />, href: "#", color: "hover:bg-[#1DA1F2]" },
                 { icon: <Instagram size={20} />, href: "#", color: "hover:bg-[#E4405F]" }
               ].map((social, i) => (
@@ -102,9 +122,20 @@ const Footer: React.FC = () => {
             <ArrowUp size={24} />
           </motion.button>
 
-          <div className="text-slate-500 text-sm flex items-center gap-1.5">
-            Made with <Heart size={14} className="text-red-500 fill-red-500" /> by 
-            <a href="#" className="text-white font-medium hover:text-primary transition-colors">Mojib Rsm</a>
+          <div className="text-slate-500 text-sm flex items-center gap-3">
+            <span className="hidden sm:inline">Made with <Heart size={14} className="text-red-500 fill-red-500 inline mx-1" /> by</span>
+            <div className="flex items-center gap-2">
+              <img 
+                src="https://image.mojib.me/uploads/General/1775512969_mojib rsm.jpg" 
+                alt="Mojib Rsm" 
+                className="w-8 h-8 rounded-full border border-white/20 object-cover"
+                referrerPolicy="no-referrer"
+              />
+              <div className="flex flex-col">
+                <a href="https://www.mojib.me/" target="_blank" rel="noopener noreferrer" className="text-white font-medium hover:text-primary transition-colors leading-none">Mojib Rsm</a>
+                <a href="https://www.facebook.com/MoJiiB.RsM/" target="_blank" rel="noopener noreferrer" className="text-[10px] text-slate-500 hover:text-[#1877F2] transition-colors">Facebook Profile</a>
+              </div>
+            </div>
           </div>
         </div>
       </div>

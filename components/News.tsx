@@ -1,14 +1,53 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import axios from 'axios';
 import { NEWS_DATA } from '../constants';
-import { Newspaper, Video, FileText, ArrowRight, Calendar, ExternalLink } from 'lucide-react';
+import { Newspaper, Video, FileText, ArrowRight, Calendar, ExternalLink, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 
 const News: React.FC = () => {
   const [filter, setFilter] = useState<'All' | 'News' | 'Interview' | 'PressNote'>('All');
+  const [dbNews, setDbNews] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const filteredNews = filter === 'All' ? NEWS_DATA : NEWS_DATA.filter(item => item.type === filter);
+  useEffect(() => {
+    const fetchDbNews = async () => {
+      try {
+        const response = await axios.get('/api/news');
+        setDbNews(response.data);
+      } catch (err) {
+        console.error('Failed to fetch news from DB', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchDbNews();
+  }, []);
+
+  // Format DB news to match the structure of static news
+  const formattedDbNews = dbNews.map(item => {
+    // Map Bengali categories to English types used in filter
+    let type = 'News';
+    if (item.category === 'সাক্ষাৎকার' || item.category === 'Interview') type = 'Interview';
+    if (item.category === 'প্রেস নোট' || item.category === 'PressNote') type = 'PressNote';
+    
+    return {
+      id: `db-${item.id}`,
+      title: item.title,
+      summary: item.content?.replace(/<[^>]*>/g, '').substring(0, 150) || item.title,
+      date: new Date(item.created_at).toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric' }),
+      source: item.external_link ? (new URL(item.external_link).hostname) : 'Official',
+      link: item.external_link || `/${item.slug}`,
+      image: item.image_url || 'https://picsum.photos/seed/news/800/600',
+      type: type,
+      isInternal: !item.external_link
+    };
+  });
+
+  const allNews = [...formattedDbNews, ...NEWS_DATA];
+  const filteredNews = filter === 'All' ? allNews : allNews.filter(item => item.type === filter);
 
   const filterOptions = [
     { id: 'All', label: 'সকল সংবাদ' },
@@ -71,6 +110,12 @@ const News: React.FC = () => {
         </motion.div>
       </div>
 
+      {isLoading && (
+        <div className="flex justify-center py-12">
+          <Loader2 className="animate-spin text-primary" size={32} />
+        </div>
+      )}
+
       <motion.div 
         layout
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
@@ -125,15 +170,25 @@ const News: React.FC = () => {
                 </p>
                 
                 <div className="pt-6 border-t border-slate-100 mt-auto">
-                  <a 
-                    href={item.link} 
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-primary font-black text-sm uppercase tracking-wider hover:gap-3 transition-all group/link"
-                  >
-                    আরও পড়ুন 
-                    <ArrowRight size={18} className="transition-transform group-hover/link:translate-x-1" />
-                  </a>
+                  {(item as any).isInternal ? (
+                    <Link 
+                      to={item.link} 
+                      className="inline-flex items-center gap-2 text-primary font-black text-sm uppercase tracking-wider hover:gap-3 transition-all group/link"
+                    >
+                      আরও পড়ুন 
+                      <ArrowRight size={18} className="transition-transform group-hover/link:translate-x-1" />
+                    </Link>
+                  ) : (
+                    <a 
+                      href={item.link} 
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-primary font-black text-sm uppercase tracking-wider hover:gap-3 transition-all group/link"
+                    >
+                      আরও পড়ুন 
+                      <ArrowRight size={18} className="transition-transform group-hover/link:translate-x-1" />
+                    </a>
+                  )}
                 </div>
               </div>
             </motion.div>

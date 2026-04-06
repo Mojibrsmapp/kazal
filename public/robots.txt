@@ -1,6 +1,4 @@
 User-agent: *
 Allow: /
-Disallow: /private/
 Disallow: /admin/
-
 Sitemap: http://kazal.pro.bd/sitemap.xml

@@ -1,8 +1,12 @@
 
 export interface TimelineEvent {
+  id: number;
+  slug: string;
   year: string;
   title: string;
   description: string;
+  fullContent?: string;
+  image?: string;
 }
 
 export interface Achievement {

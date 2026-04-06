@@ -53,7 +53,7 @@ const Biography: React.FC = () => {
         </motion.p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-24">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
         <BioCard icon={<User size={28} />} title="প্রারম্ভিক জীবন" delay={0.1}>
           লুৎফুর রহমান কাজল ১৮ নভেম্বর ১৯৬৬ সালে কক্সবাজার জেলার পোকখালীর গোমাতলী ইউনিয়নে এক সম্ভ্রান্ত পরিবারে জন্মগ্রহণ করেন। তাঁর পিতা মরহুম আলহাজ মোস্তাফিজুর রহমান ছিলেন একজন স্বনামধন্য শিক্ষানুরাগী, বিশিষ্ট শিল্পপতি ও সমাজসেবক।
         </BioCard>
@@ -80,8 +80,8 @@ const Biography: React.FC = () => {
       </div>
 
       {/* Detailed Political Career */}
-      <div className="mb-24">
-        <div className="flex items-center gap-4 mb-12">
+      <div className="mb-16">
+        <div className="flex items-center gap-4 mb-8">
           <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
             <ShieldCheck size={24} />
           </div>
@@ -109,8 +109,8 @@ const Biography: React.FC = () => {
       </div>
 
       {/* Business & Industry Leadership */}
-      <div className="mb-24">
-        <div className="flex items-center gap-4 mb-12">
+      <div className="mb-16">
+        <div className="flex items-center gap-4 mb-8">
           <div className="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary">
             <TrendingUp size={24} />
           </div>

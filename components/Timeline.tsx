@@ -1,12 +1,13 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { TIMELINE_DATA } from '../constants';
 import { motion } from 'motion/react';
 import { Calendar, ChevronRight } from 'lucide-react';
 
 const Timeline: React.FC = () => {
   return (
-    <section id="timeline" className="section-container bg-slate-50/50">
-      <div className="text-center mb-20">
+    <section id="timeline" className="section-container bg-slate-50/50 !pt-0">
+      <div className="text-center mb-16">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -35,48 +36,55 @@ const Timeline: React.FC = () => {
         </motion.p>
       </div>
 
-      <div className="relative max-w-4xl mx-auto">
+      <div className="relative max-w-5xl mx-auto px-4">
         {/* Vertical Line */}
-        <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-0.5 bg-gradient-to-b from-primary/50 via-secondary/50 to-primary/50 md:-translate-x-1/2" />
+        <div className="absolute left-8 md:left-1/2 top-0 bottom-0 w-0.5 bg-gradient-to-b from-primary/50 via-secondary/50 to-primary/50 md:-translate-x-1/2" />
 
-        <div className="space-y-12">
+        <div className="space-y-8 md:space-y-0">
           {TIMELINE_DATA.map((item, index) => (
             <motion.div 
-              key={index}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              key={item.id}
+              initial={{ opacity: 0, x: index % 2 === 0 ? -50 : 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true, margin: "-100px" }}
               transition={{ duration: 0.6, delay: index * 0.1 }}
-              className={`relative flex flex-col md:flex-row items-start md:items-center ${
+              className={`relative flex flex-col md:flex-row items-start md:items-center mb-8 md:mb-12 ${
                 index % 2 === 0 ? 'md:flex-row-reverse' : ''
               }`}
             >
               {/* Dot */}
-              <div className="absolute left-4 md:left-1/2 w-4 h-4 bg-white border-4 border-primary rounded-full md:-translate-x-1/2 z-10 shadow-lg shadow-primary/20" />
+              <div className="absolute left-8 md:left-1/2 w-5 h-5 bg-white border-4 border-primary rounded-full -translate-x-1/2 z-10 shadow-lg shadow-primary/20" />
 
               {/* Content Card */}
-              <div className={`w-full md:w-1/2 pl-12 md:pl-0 ${
+              <div className={`w-full md:w-[45%] ml-16 md:ml-0 ${
                 index % 2 === 0 ? 'md:pr-12' : 'md:pl-12'
               }`}>
-                <div className="glass-card p-6 rounded-2xl hover:border-primary/30 transition-all duration-300 group">
-                  <div className="flex items-center gap-2 text-primary font-bold mb-3">
-                    <Calendar size={18} />
-                    <span className="text-lg">{item.year}</span>
+                <Link to={`/biography/${item.slug}`} className="block group">
+                  <div className="glass-card p-6 rounded-2xl hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 border border-slate-200/60 bg-white/80 backdrop-blur-sm">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2 text-primary font-bold">
+                        <Calendar size={18} />
+                        <span className="text-lg">{item.year}</span>
+                      </div>
+                      <div className="w-8 h-8 rounded-full bg-primary/5 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                        <ChevronRight size={18} />
+                      </div>
+                    </div>
+                    <h3 className="text-xl font-display font-bold text-slate-900 mb-3 group-hover:text-primary transition-colors leading-tight">
+                      {item.title}
+                    </h3>
+                    <p className="text-slate-600 leading-relaxed bengali-text line-clamp-3">
+                      {item.description}
+                    </p>
+                    <div className="mt-4 inline-flex items-center gap-1 text-primary text-sm font-bold border-b-2 border-transparent group-hover:border-primary transition-all">
+                      আরও পড়ুন
+                    </div>
                   </div>
-                  <h3 className="text-xl font-display font-bold text-slate-900 mb-3 group-hover:text-primary transition-colors">
-                    {item.title}
-                  </h3>
-                  <p className="text-slate-600 leading-relaxed bengali-text">
-                    {item.description}
-                  </p>
-                  <div className="mt-4 flex items-center gap-1 text-primary text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity">
-                    Read More <ChevronRight size={16} />
-                  </div>
-                </div>
+                </Link>
               </div>
 
-              {/* Year Label for Desktop */}
-              <div className="hidden md:block w-1/2" />
+              {/* Spacer for Desktop */}
+              <div className="hidden md:block w-[45%]" />
             </motion.div>
           ))}
         </div>
