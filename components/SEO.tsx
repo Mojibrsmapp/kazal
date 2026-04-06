@@ -82,6 +82,7 @@ const SEO: React.FC<SEOProps> = ({
       <meta name="description" content={description} />
       {keywords.length > 0 && <meta name="keywords" content={keywords.join(', ')} />}
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <meta name="google-site-verification" content="7bEm-ae1S5qDih74Q2jk8Exm0YVb1PGhaqxEW86M05E" />
       <meta name="robots" content="index, follow" />
       <link rel="icon" type="image/png" href="/favicon.png" />
       <meta name="author" content="Lutfur Rahman Kajal" />

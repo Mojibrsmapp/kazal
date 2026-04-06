@@ -3,4 +3,4 @@ Allow: /
 Disallow: /private/
 Disallow: /admin/
 
-Sitemap: https://kajol.mojib.me/sitemap.xml
+Sitemap: http://kazal.pro.bd/sitemap.xml

@@ -82,6 +82,7 @@ const App: React.FC = () => {
         <Helmet>
           <title>Lutfur Rahman Kajal | লুৎফুর রহমান কাজল | Cox's Bazar-3 MP Official Website</title>
           <meta name="description" content="Lutfur Rahman Kajal (লুৎফুর রহমান কাজল) Cox's Bazar-3 MP এর জীবনী, রাজনৈতিক ক্যারিয়ার, নির্বাচন ইতিহাস, সর্বশেষ খবর, বক্তব্য ও আপডেট।" />
+          <meta name="google-site-verification" content="7bEm-ae1S5qDih74Q2jk8Exm0YVb1PGhaqxEW86M05E" />
           <meta name="robots" content="index, follow" />
           <link rel="icon" type="image/png" href="/favicon.png" />
           <link rel="canonical" href="http://kazal.pro.bd/" />

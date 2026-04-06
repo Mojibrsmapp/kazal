@@ -1,5 +1,7 @@
 # Lutfur Rahman Kajal - Official Portfolio & Political Profile
 
+![Preview](public/preview.jpg)
+
 Official website and political profile of **Lutfur Rahman Kajal**, Member of Parliament (Cox's Bazar-3) and Central Fisheries Affairs Secretary of the Bangladesh Nationalist Party (BNP).
 
 ## 🚀 Features
