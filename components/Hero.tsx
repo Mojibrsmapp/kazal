@@ -106,23 +106,6 @@ const Hero: React.FC = () => {
                   className="w-full h-full object-cover object-top hover:scale-110 transition-transform duration-700"
                 />
               </div>
-
-              {/* Floating Badge */}
-              <motion.div 
-                animate={{ y: [0, -10, 0] }}
-                transition={{ duration: 4, repeat: Infinity }}
-                className="absolute -right-4 top-1/4 bg-white p-4 rounded-2xl shadow-xl border border-slate-100 z-20 hidden md:block"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                    <Play size={20} fill="currentColor" />
-                  </div>
-                  <div>
-                    <div className="text-xs text-slate-400 font-bold uppercase tracking-tighter">Current Status</div>
-                    <div className="text-sm font-bold text-slate-900">Member of Parliament</div>
-                  </div>
-                </div>
-              </motion.div>
             </div>
           </motion.div>
         </div>

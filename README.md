@@ -1,20 +1,112 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Lutfur Rahman Kajal - Official Portfolio & Political Profile
 
-# Run and deploy your AI Studio app
+Official website and political profile of **Lutfur Rahman Kajal**, Member of Parliament (Cox's Bazar-3) and Central Fisheries Affairs Secretary of the Bangladesh Nationalist Party (BNP).
 
-This contains everything you need to run your app locally.
+## 🚀 Features
 
-View your app in AI Studio: https://ai.studio/apps/0c6aa4a9-f00b-4f23-b6b3-b44644cc4d9c
+- **Modern Tech Stack**: Built with React 18, Vite, TypeScript, and Tailwind CSS.
+- **Clean URL Routing**: Uses `BrowserRouter` for hash-free, professional URLs (e.g., `/vision`, `/biography`).
+- **SEO Optimized**:
+  - Dynamic meta tags and titles using `react-helmet-async`.
+  - Structured data (JSON-LD) for Person, WebSite, and Organization schemas.
+  - Comprehensive keyword integration in both English and Bengali.
+- **Responsive Design**: Fully mobile-responsive layout with a "Desktop-First Precision, Mobile-First Code" approach.
+- **Smooth Animations**: Interactive UI elements powered by `framer-motion`.
+- **Full-Stack Capabilities**:
+  - Express.js backend for API proxying (e.g., Voter Search) to handle CORS.
+  - Vite middleware integration for a seamless development experience.
+- **Vercel Ready**: Pre-configured `vercel.json` for easy deployment with proper route rewrites.
 
-## Run Locally
+## 🛠️ Tech Stack
 
-**Prerequisites:**  Node.js
+- **Frontend**: React, TypeScript, Vite, Tailwind CSS, Framer Motion, Lucide React.
+- **Backend**: Node.js, Express.js (for API proxy and static serving).
+- **SEO**: React Helmet Async, JSON-LD.
+- **Deployment**: Vercel (recommended).
 
+## 📂 Project Structure
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+```text
+├── components/         # Reusable UI components (Navbar, Footer, SEO, etc.)
+├── pages/              # Individual page components (Home, Vision, Biography, etc.)
+├── lib/                # Utility functions (cn helper)
+├── constants.ts        # Global constants (Navigation links, SEO keywords)
+├── App.tsx             # Main application entry and routing
+├── server.ts           # Express server with Vite middleware and API proxy
+├── index.html          # Main HTML template with initial SEO and JSON-LD
+├── vercel.json         # Vercel deployment configuration
+└── package.json        # Dependencies and scripts
+```
+
+## 🚦 Getting Started
+
+### Prerequisites
+
+- Node.js (v18 or higher)
+- npm or yarn
+
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd lutfur-rahman-kajal-portfolio
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+### Development
+
+Run the development server (Express + Vite):
+```bash
+npm run dev
+```
+The app will be available at `http://localhost:3000`.
+
+### Build
+
+Build the production-ready static files:
+```bash
+npm run build
+```
+The output will be in the `dist/` directory.
+
+### Production Start
+
+Start the production server:
+```bash
+npm start
+```
+
+## 🌐 Deployment (Vercel)
+
+This project is optimized for Vercel. The `vercel.json` file handles the necessary rewrites for client-side routing:
+
+```json
+{
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
+```
+
+Simply connect your repository to Vercel, and it will automatically detect the Vite build settings.
+
+## 🔍 SEO & Structured Data
+
+The project uses a dedicated `SEO` component (`/components/SEO.tsx`) that manages:
+- **Meta Tags**: Title, Description, Keywords, Robots, Author.
+- **Social Media**: Open Graph (Facebook/LinkedIn) and Twitter Card tags.
+- **Structured Data**: Injects a JSON-LD script for search engine knowledge graphs.
+
+Global SEO settings can be found in `constants.ts` under `COMMON_KEYWORDS`.
+
+## 📄 License
+
+This project is for official use. All rights reserved.
+
+---
+*Developed with ❤️ by [Mojib Rsm](https://www.mojib.me)*
