@@ -22,85 +22,87 @@ const __dirname = path.dirname(__filename);
 const JWT_SECRET = process.env.JWT_SECRET || "kazal-secret-key-2026";
 const upload = multer({ storage: multer.memoryStorage() });
 
-async function startServer() {
-  await initDb();
-  const app = express();
-  app.use(express.json());
-  const PORT = 3000;
+export const app = express();
+app.use(express.json());
 
-  // Auth Middleware
-  const authenticateToken = (req: any, res: any, next: any) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    if (!token) return res.sendStatus(401);
+// Auth Middleware
+const authenticateToken = (req: any, res: any, next: any) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) return res.sendStatus(401);
 
-    jwt.verify(token, JWT_SECRET, (err: any, user: any) => {
-      if (err) return res.sendStatus(403);
-      req.user = user;
-      next();
-    });
-  };
-
-  const checkPermission = (permission: string) => {
-    return (req: any, res: any, next: any) => {
-      if (req.user.is_primary) return next();
-      
-      const permissions = JSON.parse(req.user.permissions || "{}");
-      if (permissions[permission]) {
-        next();
-      } else {
-        res.status(403).json({ error: `Permission denied: ${permission}` });
-      }
-    };
-  };
-
-  // Email Transporter
-  const transporter = nodemailer.createTransport({
-    host: "mail.cyberpersons.com",
-    port: 587,
-    secure: false, // true for 465, false for other ports
-    auth: {
-      user: "smtp_93f21185c2584148",
-      pass: "K5Bd16c3kuVv0rQfcbEvgur_VgoZ-q_s",
-    },
-    tls: {
-      rejectUnauthorized: false
-    }
+  jwt.verify(token, JWT_SECRET, (err: any, user: any) => {
+    if (err) return res.sendStatus(403);
+    req.user = user;
+    next();
   });
+};
 
-  const sendEmail = async (to: string, subject: string, html: string) => {
-    try {
-      await transporter.sendMail({
-        from: '"Lutfur Rahman Kajal" <kazal@bartanow.com>',
-        to,
-        subject,
-        html,
-      });
-    } catch (error) {
-      console.error("Email Error:", error);
+const checkPermission = (permission: string) => {
+  return (req: any, res: any, next: any) => {
+    if (req.user.is_primary) return next();
+    
+    const permissions = JSON.parse(req.user.permissions || "{}");
+    if (permissions[permission]) {
+      next();
+    } else {
+      res.status(403).json({ error: `Permission denied: ${permission}` });
     }
   };
+};
 
-  // Log Helper
-  const logAction = async (adminId: number | null, action: string, details: string) => {
-    await db.execute({
-      sql: "INSERT INTO logs (admin_id, action, details) VALUES (?, ?, ?)",
-      args: [adminId, action, details],
+// Email Transporter
+const transporter = nodemailer.createTransport({
+  host: "mail.cyberpersons.com",
+  port: 587,
+  secure: false, // true for 465, false for other ports
+  auth: {
+    user: "smtp_93f21185c2584148",
+    pass: "K5Bd16c3kuVv0rQfcbEvgur_VgoZ-q_s",
+  },
+  tls: {
+    rejectUnauthorized: false
+  }
+});
+
+const sendEmail = async (to: string, subject: string, html: string) => {
+  try {
+    await transporter.sendMail({
+      from: '"Lutfur Rahman Kajal" <kazal@bartanow.com>',
+      to,
+      subject,
+      html,
     });
+  } catch (error) {
+    console.error("Email Error:", error);
+  }
+};
 
-    // Send log to admin email
-    if (action !== "VISIT") {
-      await sendEmail("bartanowcom@gmail.com", `System Log: ${action}`, `
-        <h3>System Log Alert</h3>
-        <p><strong>Action:</strong> ${action}</p>
-        <p><strong>Details:</strong> ${details}</p>
-        <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
-      `);
-    }
-  };
+// Log Helper
+const logAction = async (adminId: number | null, action: string, details: string) => {
+  await db.execute({
+    sql: "INSERT INTO logs (admin_id, action, details) VALUES (?, ?, ?)",
+    args: [adminId, action, details],
+  }).catch(console.error);
 
-  // API Proxy for Voter Search
-  app.get("/api/voter-search", async (req, res) => {
+  // Send log to admin email
+  if (action !== "VISIT") {
+    await sendEmail("bartanowcom@gmail.com", `System Log: ${action}`, `
+      <h3>System Log Alert</h3>
+      <p><strong>Action:</strong> ${action}</p>
+      <p><strong>Details:</strong> ${details}</p>
+      <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
+    `).catch(console.error);
+  }
+};
+
+// Health check / Ping
+app.get("/api/ping", (req, res) => {
+  res.json({ status: "ok", time: new Date().toISOString(), vercel: !!process.env.VERCEL });
+});
+
+// API Proxy for Voter Search
+app.get("/api/voter-search", async (req, res) => {
     try {
       const { name, father, mother, birth } = req.query;
       let url = "https://kazalbnp.com/api/voter-search";
@@ -895,7 +897,7 @@ async function startServer() {
       appType: "spa",
     });
     app.use(vite.middlewares);
-  } else {
+  } else if (!process.env.VERCEL) {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
@@ -937,9 +939,11 @@ app.delete("/api/admin/:id", authenticateToken, async (req: any, res) => {
   }
 });
 
-app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
+const PORT = 3000;
+if (!process.env.VERCEL) {
+  initDb().then(() => {
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
+  }).catch(console.error);
 }
-
-startServer();
