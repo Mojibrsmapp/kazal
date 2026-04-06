@@ -9,6 +9,7 @@ import jwt from "jsonwebtoken";
 import multer from "multer";
 import dotenv from "dotenv";
 import nodemailer from "nodemailer";
+import { google } from "googleapis";
 import { db, initDb } from "./db.js";
 import { uploadToTelegram } from "./telegram.js";
 import { sendSms } from "./sms.js";
@@ -817,6 +818,45 @@ async function startServer() {
     } catch (error) {
       console.error("Analytics Error:", error);
       res.status(500).json({ error: "Failed to fetch analytics" });
+    }
+  });
+
+  app.get("/api/admin/search-console", authenticateToken, async (req: any, res) => {
+    try {
+      const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
+      const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+      const siteUrl = process.env.GOOGLE_SEARCH_CONSOLE_SITE_URL || "https://yoursite.com";
+
+      if (!clientEmail || !privateKey) {
+        return res.status(400).json({ error: "Google Search Console credentials not configured" });
+      }
+
+      const auth = new google.auth.JWT({
+        email: clientEmail,
+        key: privateKey,
+        scopes: ["https://www.googleapis.com/auth/webmasters.readonly"]
+      });
+
+      const searchconsole = google.webmasters({ version: "v3", auth });
+
+      // Get data for the last 30 days
+      const endDate = new Date().toISOString().split('T')[0];
+      const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+      const response = await searchconsole.searchanalytics.query({
+        siteUrl: siteUrl,
+        requestBody: {
+          startDate: startDate,
+          endDate: endDate,
+          dimensions: ["query"],
+          rowLimit: 20,
+        },
+      });
+
+      res.json(response.data);
+    } catch (error: any) {
+      console.error("Search Console API Error:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch Search Console data" });
     }
   });
 

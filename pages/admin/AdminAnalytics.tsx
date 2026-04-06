@@ -30,10 +30,12 @@ import { motion } from 'motion/react';
 
 const AdminAnalytics: React.FC = () => {
   const [data, setData] = useState<any>(null);
+  const [scData, setScData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     fetchAnalytics();
+    fetchSearchConsole();
   }, []);
 
   const fetchAnalytics = async () => {
@@ -50,6 +52,18 @@ const AdminAnalytics: React.FC = () => {
     }
   };
 
+  const fetchSearchConsole = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('/api/admin/search-console', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setScData(response.data);
+    } catch (err) {
+      console.error('Failed to fetch Search Console data', err);
+    }
+  };
+
   if (isLoading) return (
     <AdminLayout>
       <div className="flex items-center justify-center h-64">
@@ -58,11 +72,15 @@ const AdminAnalytics: React.FC = () => {
     </AdminLayout>
   );
 
+  const avgCtr = scData?.rows?.length 
+    ? (scData.rows.reduce((acc: number, row: any) => acc + row.ctr, 0) / scData.rows.length * 100).toFixed(2) + '%'
+    : data?.ga_data?.ctr || '0%';
+
   const stats = [
     { label: 'Total Page Views', value: data?.total_views || 0, icon: <Eye size={20} />, color: 'bg-blue-500', change: '+12%', trend: 'up' },
     { label: 'Unique Visitors', value: data?.unique_visitors || 0, icon: <Users size={20} />, color: 'bg-primary', change: '+5%', trend: 'up' },
     { label: 'Today Views', value: data?.today_views || 0, icon: <TrendingUp size={20} />, color: 'bg-green-500', change: '+18%', trend: 'up' },
-    { label: 'Avg. CTR', value: data?.ga_data?.ctr || '0%', icon: <MousePointer2 size={20} />, color: 'bg-orange-500', change: '-2%', trend: 'down' },
+    { label: 'Avg. CTR', value: avgCtr, icon: <MousePointer2 size={20} />, color: 'bg-orange-500', change: '-2%', trend: 'down' },
   ];
 
   return (
@@ -127,20 +145,25 @@ const AdminAnalytics: React.FC = () => {
             <h2 className="text-xl font-bold text-slate-800">Top Search Keywords</h2>
           </div>
           <div className="space-y-4">
-            {data?.ga_data?.keywords?.map((kw: any, idx: number) => (
+            {(scData?.rows || data?.ga_data?.keywords)?.map((kw: any, idx: number) => (
               <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-all">
-                <span className="text-sm text-slate-700 font-medium">{kw.term}</span>
+                <span className="text-sm text-slate-700 font-medium">{kw.keys?.[0] || kw.term}</span>
                 <div className="flex items-center gap-4">
                   <div className="text-right">
                     <p className="text-[10px] text-slate-400 font-bold uppercase">Clicks</p>
                     <p className="text-xs font-bold text-slate-800">{kw.clicks}</p>
                   </div>
                   <div className="w-12 h-1 bg-slate-200 rounded-full overflow-hidden">
-                    <div className="h-full bg-primary" style={{ width: `${(kw.clicks / 500) * 100}%` }} />
+                    <div className="h-full bg-primary" style={{ width: `${Math.min((kw.clicks / 500) * 100, 100)}%` }} />
                   </div>
                 </div>
               </div>
             ))}
+            {!scData?.rows && !data?.ga_data?.keywords && (
+              <div className="text-center py-8 text-slate-400">
+                <p className="text-sm">No keyword data available</p>
+              </div>
+            )}
           </div>
         </motion.div>
       </div>
