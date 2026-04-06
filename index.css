@@ -1,0 +1,63 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&family=Hind+Siliguri:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-bengali: "Hind Siliguri", serif;
+
+  --color-primary: #006a4e;
+  --color-primary-light: #008562;
+  --color-primary-dark: #004d39;
+  --color-secondary: #f42a41;
+  --color-secondary-light: #f65467;
+  --color-secondary-dark: #c11b2d;
+  --color-accent: #FFD700;
+}
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased selection:bg-primary/20 selection:text-primary;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    @apply tracking-tight;
+  }
+
+  .bengali-text {
+    font-family: var(--font-bengali);
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-xl shadow-slate-200/50;
+  }
+
+  .glass-navbar {
+    @apply bg-white/70 backdrop-blur-lg border-b border-white/20;
+  }
+
+  .section-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24;
+  }
+
+  .btn-primary {
+    @apply px-6 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-light transition-all duration-300 shadow-lg shadow-primary/20 hover:shadow-primary/40 active:scale-95;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 bg-white text-primary font-semibold rounded-xl border border-primary/20 hover:bg-slate-50 transition-all duration-300 shadow-sm active:scale-95;
+  }
+}
+
+.text-gradient {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-light;
+}
+
+.bg-mesh {
+  background-image: radial-gradient(at 0% 0%, hsla(164, 100%, 21%, 0.05) 0, transparent 50%),
+                    radial-gradient(at 50% 0%, hsla(353, 90%, 56%, 0.05) 0, transparent 50%),
+                    radial-gradient(at 100% 0%, hsla(164, 100%, 21%, 0.05) 0, transparent 50%);
+}
