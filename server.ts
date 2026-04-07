@@ -143,11 +143,20 @@ app.get("/api/voter-search", async (req, res) => {
       if (father) params.append("father", father as string);
       if (mother) params.append("mother", mother as string);
       if (birth) params.append("birth", birth as string);
-      const response = await axios.get(`${url}?${params.toString()}`);
+      const response = await axios.get(`${url}?${params.toString()}`, {
+        timeout: 10000 // 10 seconds timeout
+      });
       res.json(response.data);
-    } catch (error) {
-      console.error("Proxy Error:", error);
-      res.status(500).json({ error: "Failed to fetch voter data" });
+    } catch (error: any) {
+      console.error("Proxy Error:", error.message || error);
+      if (error.response) {
+        res.status(error.response.status).json({ 
+          error: "Upstream API error", 
+          details: error.response.data 
+        });
+      } else {
+        res.status(500).json({ error: "Failed to fetch voter data" });
+      }
     }
   });
 
@@ -1027,7 +1036,7 @@ app.delete("/api/admin/:id", authenticateToken, async (req: any, res) => {
   }
 });
 
-const PORT = 3000;
+const PORT = 3001;
 if (!process.env.VERCEL) {
   initDb().then(() => {
     app.listen(PORT, "0.0.0.0", () => {
