@@ -1,45 +1,59 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import axios from 'axios';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { HelmetProvider, Helmet } from 'react-helmet-async';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-import { AlertTriangle, X } from 'lucide-react';
+import { AlertTriangle, X, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './lib/utils';
 
-// Import Pages
-import Home from './pages/Home';
-import Biography from './pages/Biography';
-import BiographyDetail from './pages/BiographyDetail';
-import Vision from './pages/Vision';
-import Area from './pages/Area';
-import Gallery from './pages/Gallery';
-import News from './pages/News';
-import Contact from './pages/Contact';
-import VoterSlip from './pages/VoterSlip';
+// Lazy Load Pages
+const Home = lazy(() => import('./pages/Home'));
+const Biography = lazy(() => import('./pages/Biography'));
+const BiographyDetail = lazy(() => import('./pages/BiographyDetail'));
+const Vision = lazy(() => import('./pages/Vision'));
+const Area = lazy(() => import('./pages/Area'));
+const Gallery = lazy(() => import('./pages/Gallery'));
+const News = lazy(() => import('./pages/News'));
+const Contact = lazy(() => import('./pages/Contact'));
+const VoterSlip = lazy(() => import('./pages/VoterSlip'));
 
 // Admin Pages
-import AdminLogin from './pages/admin/Login';
-import AdminDashboard from './pages/admin/Dashboard';
-import AdminNews from './pages/admin/NewsManagement';
-import AdminUsers from './pages/admin/AdminManagement';
-import AdminLogs from './pages/admin/Logs';
-import AdminProfile from './pages/admin/Profile';
-import AdminGallery from './pages/admin/GalleryManagement';
-import AdminPlans from './pages/admin/DevelopmentPlans';
-import AdminMessages from './pages/admin/Messages';
-import AdminSettings from './pages/admin/AdminSettings';
-import AdminNotices from './pages/admin/AdminNotices';
-import AdminAnalytics from './pages/admin/AdminAnalytics';
-import AddNews from './pages/admin/AddNews';
-import AddGallery from './pages/admin/AddGallery';
-import AddAdmin from './pages/admin/AddAdmin';
+const AdminLogin = lazy(() => import('./pages/admin/Login'));
+const AdminDashboard = lazy(() => import('./pages/admin/Dashboard'));
+const AdminNews = lazy(() => import('./pages/admin/NewsManagement'));
+const AdminUsers = lazy(() => import('./pages/admin/AdminManagement'));
+const AdminLogs = lazy(() => import('./pages/admin/Logs'));
+const AdminProfile = lazy(() => import('./pages/admin/Profile'));
+const AdminGallery = lazy(() => import('./pages/admin/GalleryManagement'));
+const AdminPlans = lazy(() => import('./pages/admin/DevelopmentPlans'));
+const AdminMessages = lazy(() => import('./pages/admin/Messages'));
+const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
+const AdminNotices = lazy(() => import('./pages/admin/AdminNotices'));
+const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'));
+const AddNews = lazy(() => import('./pages/admin/AddNews'));
+const AddGallery = lazy(() => import('./pages/admin/AddGallery'));
+const AddAdmin = lazy(() => import('./pages/admin/AddAdmin'));
 
 // Dynamic News Detail
-import NewsDetail from './pages/NewsDetail';
-import PublicProfile from './pages/PublicProfile';
-import SlugHandler from './pages/SlugHandler';
+const NewsDetail = lazy(() => import('./pages/NewsDetail'));
+const PublicProfile = lazy(() => import('./pages/PublicProfile'));
+const SlugHandler = lazy(() => import('./pages/SlugHandler'));
+
+// Loading Fallback
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-[60vh]">
+    <motion.div
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="flex flex-col items-center gap-4"
+    >
+      <Loader2 className="w-12 h-12 text-emerald-600 animate-spin" />
+      <p className="text-slate-500 font-medium animate-pulse">লোড হচ্ছে...</p>
+    </motion.div>
+  </div>
+);
 
 // Scroll to top on route change
 const ScrollToTop = () => {
@@ -213,40 +227,42 @@ const App: React.FC = () => {
           {!isAdminRoute && <Navbar />}
           {!isAdminRoute && <NoticeBanner />}
           <main className="flex-grow">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/biography" element={<Biography />} />
-              <Route path="/biography/:slug" element={<BiographyDetail />} />
-              <Route path="/vision" element={<Vision />} />
-              <Route path="/area" element={<Area />} />
-              <Route path="/Gallery" element={<Gallery />} />
-              <Route path="/news" element={<News />} />
-              <Route path="/voter-slip" element={<VoterSlip />} />
-              <Route path="/contact" element={<Contact />} />
-              
-              {/* Admin Routes */}
-              <Route path="/admin/login" element={<AdminLogin />} />
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/news" element={<AdminNews />} />
-              <Route path="/admin/users" element={<AdminUsers />} />
-              <Route path="/admin/logs" element={<AdminLogs />} />
-              <Route path="/admin/profile" element={<AdminProfile />} />
-              <Route path="/admin/gallery" element={<AdminGallery />} />
-              <Route path="/admin/plans" element={<AdminPlans />} />
-              <Route path="/admin/messages" element={<AdminMessages />} />
-              <Route path="/admin/settings" element={<AdminSettings />} />
-              <Route path="/admin/notices" element={<AdminNotices />} />
-              <Route path="/admin/analytics" element={<AdminAnalytics />} />
-              <Route path="/admin/news/add" element={<AddNews />} />
-              <Route path="/admin/gallery/add" element={<AddGallery />} />
-              <Route path="/admin/users/add" element={<AddAdmin />} />
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/biography" element={<Biography />} />
+                <Route path="/biography/:slug" element={<BiographyDetail />} />
+                <Route path="/vision" element={<Vision />} />
+                <Route path="/area" element={<Area />} />
+                <Route path="/Gallery" element={<Gallery />} />
+                <Route path="/news" element={<News />} />
+                <Route path="/voter-slip" element={<VoterSlip />} />
+                <Route path="/contact" element={<Contact />} />
+                
+                {/* Admin Routes */}
+                <Route path="/admin/login" element={<AdminLogin />} />
+                <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/admin/news" element={<AdminNews />} />
+                <Route path="/admin/users" element={<AdminUsers />} />
+                <Route path="/admin/logs" element={<AdminLogs />} />
+                <Route path="/admin/profile" element={<AdminProfile />} />
+                <Route path="/admin/gallery" element={<AdminGallery />} />
+                <Route path="/admin/plans" element={<AdminPlans />} />
+                <Route path="/admin/messages" element={<AdminMessages />} />
+                <Route path="/admin/settings" element={<AdminSettings />} />
+                <Route path="/admin/notices" element={<AdminNotices />} />
+                <Route path="/admin/analytics" element={<AdminAnalytics />} />
+                <Route path="/admin/news/add" element={<AddNews />} />
+                <Route path="/admin/gallery/add" element={<AddGallery />} />
+                <Route path="/admin/users/add" element={<AddAdmin />} />
 
-              {/* Dynamic News Detail - Catch all for slugs */}
-              <Route path="/:slug" element={<SlugHandler />} />
+                {/* Dynamic News Detail - Catch all for slugs */}
+                <Route path="/:slug" element={<SlugHandler />} />
 
-              {/* Catch all - redirect to home */}
-              <Route path="*" element={<Home />} />
-            </Routes>
+                {/* Catch all - redirect to home */}
+                <Route path="*" element={<Home />} />
+              </Routes>
+            </Suspense>
           </main>
           {!isAdminRoute && <Footer />}
         </div>
