@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from '../../components/admin/AdminLayout';
-import { Plus, Image as ImageIcon, Video, Trash2, Loader2, Search, Filter, Star } from 'lucide-react';
+import { Plus, Image as ImageIcon, Video, Trash2, Loader2, Search, Filter, Star, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 const GalleryManagement: React.FC = () => {
@@ -20,6 +20,7 @@ const GalleryManagement: React.FC = () => {
   const [isFeatured, setIsFeatured] = useState(false);
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchGallery();
@@ -38,6 +39,7 @@ const GalleryManagement: React.FC = () => {
     const file = e.target.files?.[0];
     if (file) {
       setImage(file);
+      setError(null);
       const reader = new FileReader();
       reader.onloadend = () => setImagePreview(reader.result as string);
       reader.readAsDataURL(file);
@@ -47,6 +49,7 @@ const GalleryManagement: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
     const token = localStorage.getItem('token');
     const formData = new FormData();
     formData.append('title', title);
@@ -54,7 +57,15 @@ const GalleryManagement: React.FC = () => {
     formData.append('url', url);
     formData.append('category', category);
     formData.append('is_featured', isFeatured ? '1' : '0');
-    if (image) formData.append('image', image);
+    
+    if (type === 'photo') {
+      if (!image) {
+        setError('Please select an image');
+        setIsLoading(false);
+        return;
+      }
+      formData.append('image', image);
+    }
 
     try {
       await axios.post('/api/admin/gallery', formData, {
@@ -66,8 +77,9 @@ const GalleryManagement: React.FC = () => {
       setIsModalOpen(false);
       resetForm();
       fetchGallery();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to add gallery item', err);
+      setError(err.response?.data?.error || 'Failed to upload media. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -94,6 +106,7 @@ const GalleryManagement: React.FC = () => {
     setIsFeatured(false);
     setImage(null);
     setImagePreview(null);
+    setError(null);
   };
 
   const filteredItems = items.filter(item => filter === 'all' || item.type === filter);
@@ -201,6 +214,12 @@ const GalleryManagement: React.FC = () => {
               </div>
 
               <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                {error && (
+                  <div className="p-3 bg-red-50 border border-red-100 text-red-600 rounded-xl text-xs font-bold flex items-center gap-2">
+                    <AlertTriangle size={16} />
+                    {error}
+                  </div>
+                )}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Title (Optional)</label>
                   <input 

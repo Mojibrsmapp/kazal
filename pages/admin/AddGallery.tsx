@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from '../../components/admin/AdminLayout';
-import { Image as ImageIcon, Video, Loader2, ArrowLeft, Save, Star, FolderOpen, Link as LinkIcon } from 'lucide-react';
+import { Image as ImageIcon, Video, Loader2, ArrowLeft, Save, Star, FolderOpen, Link as LinkIcon, AlertTriangle } from 'lucide-react';
 import { motion } from 'motion/react';
 
 const AddGallery: React.FC = () => {
@@ -17,11 +17,13 @@ const AddGallery: React.FC = () => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [videoUrl, setVideoUrl] = useState('');
   const [isFeatured, setIsFeatured] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setImage(file);
+      setError(null);
       const reader = new FileReader();
       reader.onloadend = () => setImagePreview(reader.result as string);
       reader.readAsDataURL(file);
@@ -31,6 +33,7 @@ const AddGallery: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
     const token = localStorage.getItem('token');
     
     try {
@@ -40,21 +43,32 @@ const AddGallery: React.FC = () => {
       formData.append('category', category);
       formData.append('is_featured', isFeatured ? '1' : '0');
       
-      if (type === 'photo' && image) {
+      if (type === 'photo') {
+        if (!image) {
+          setError('Please select an image');
+          setIsLoading(false);
+          return;
+        }
         formData.append('image', image);
       } else if (type === 'video') {
+        if (!videoUrl) {
+          setError('Please enter a YouTube video ID or URL');
+          setIsLoading(false);
+          return;
+        }
         formData.append('url', videoUrl);
       }
 
-      await axios.post('/api/gallery', formData, {
+      await axios.post('/api/admin/gallery', formData, {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
         }
       });
       navigate('/admin/gallery');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to add to gallery', err);
+      setError(err.response?.data?.error || 'Failed to upload media. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -78,6 +92,12 @@ const AddGallery: React.FC = () => {
         className="max-w-3xl bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden"
       >
         <form onSubmit={handleSubmit} className="p-8 space-y-6">
+          {error && (
+            <div className="p-4 bg-red-50 border border-red-100 text-red-600 rounded-2xl text-sm font-bold flex items-center gap-2">
+              <AlertTriangle size={18} />
+              {error}
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">Media Type</label>

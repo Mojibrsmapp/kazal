@@ -617,18 +617,19 @@ app.get("/api/voter-search", async (req, res) => {
     const { title, type, url, category, is_featured } = req.body;
     let finalUrl = url;
 
-    if (type === 'photo' && req.file) {
-      finalUrl = await uploadToTelegram(req.file.buffer, req.file.originalname);
-    }
-
     try {
+      if (type === 'photo' && req.file) {
+        finalUrl = await uploadToTelegram(req.file.buffer, req.file.originalname);
+      }
+
       await db.execute({
         sql: "INSERT INTO gallery (title, type, url, category, is_featured) VALUES (?, ?, ?, ?, ?)",
-        args: [title, type, finalUrl, category, is_featured ? 1 : 0]
+        args: [title, type, finalUrl, category, is_featured === '1' ? 1 : 0]
       });
       await logAction(req.user.id, "ADD_GALLERY", `Added ${type} to gallery`);
       res.json({ success: true });
     } catch (error) {
+      console.error("Add Gallery Error:", error);
       res.status(500).json({ error: "Failed to add gallery item" });
     }
   });
