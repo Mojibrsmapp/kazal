@@ -1,32 +1,45 @@
-import { createClient } from "@libsql/client";
+import mysql from "mysql2/promise";
 import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-const url = process.env.TURSO_URL || "libsql://kazal-mojibrsm.aws-ap-northeast-1.turso.io";
-const authToken = process.env.TURSO_TOKEN || "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzU1MTIwMTQsImlkIjoiMDE5ZDY0YzMtMTcwMS03ZmNkLWI5MDEtYWIwYThhZTFkOTc0IiwicmlkIjoiM2I1MDQyYTItMDc1Yi00OWRhLWFiYTAtZTM5MTk0NzRkNzNlIn0.QNrXaXCuu0dRtEoYYmt3UU0wjeXcyLZDYsc6CXD1NAdQoSw037CfSxG0eCH7mfqTtZ-gzkGX8zdcBeqrKY98Cg";
-
-export const db = createClient({
-  url,
-  authToken,
+const pool = mysql.createPool({
+  host: process.env.MYSQL_HOST || "localhost",
+  user: process.env.MYSQL_USER || "root",
+  password: process.env.MYSQL_PASSWORD || "",
+  database: process.env.MYSQL_DATABASE || "kazal_portfolio",
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
 });
+
+export const db = {
+  async execute(params: string | { sql: string; args?: any[] }) {
+    const sql = typeof params === "string" ? params : params.sql;
+    const args = typeof params === "string" ? [] : params.args || [];
+    
+    // Convert ? to MySQL style if needed (mysql2 uses ? already)
+    const [rows] = await pool.execute(sql, args);
+    return { rows: rows as any[] };
+  }
+};
 
 export async function initDb() {
   // Admins table
   await db.execute(`
     CREATE TABLE IF NOT EXISTS admins (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT UNIQUE NOT NULL,
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      username VARCHAR(255) UNIQUE NOT NULL,
       password TEXT NOT NULL,
-      phone TEXT NOT NULL,
-      email TEXT,
-      full_name TEXT NOT NULL,
+      phone VARCHAR(20) NOT NULL,
+      email VARCHAR(255),
+      full_name VARCHAR(255) NOT NULL,
       avatar TEXT,
-      slug TEXT UNIQUE,
-      role TEXT DEFAULT 'Editor', -- Super Admin, Editor, Moderator
-      permissions TEXT, -- JSON string of permissions
-      is_primary INTEGER DEFAULT 0,
+      slug VARCHAR(255) UNIQUE,
+      role VARCHAR(50) DEFAULT 'Editor',
+      permissions TEXT,
+      is_primary TINYINT DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
@@ -34,27 +47,27 @@ export async function initDb() {
   // Development Plans table
   await db.execute(`
     CREATE TABLE IF NOT EXISTS development_plans (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      title TEXT NOT NULL,
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      title VARCHAR(255) NOT NULL,
       description TEXT,
-      type TEXT NOT NULL, -- road, school, hospital, etc.
-      status TEXT DEFAULT 'Running', -- Running, Completed
-      area TEXT,
+      type VARCHAR(50) NOT NULL,
+      status VARCHAR(50) DEFAULT 'Running',
+      area VARCHAR(255),
       image_url TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     )
   `);
 
   // Gallery table
   await db.execute(`
     CREATE TABLE IF NOT EXISTS gallery (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      title TEXT,
-      type TEXT NOT NULL, -- photo, video
-      url TEXT NOT NULL, -- image url or youtube embed id
-      category TEXT, -- Political, Social, Family
-      is_featured INTEGER DEFAULT 0,
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      title VARCHAR(255),
+      type VARCHAR(50) NOT NULL,
+      url TEXT NOT NULL,
+      category VARCHAR(100),
+      is_featured TINYINT DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
@@ -62,104 +75,56 @@ export async function initDb() {
   // Messages table
   await db.execute(`
     CREATE TABLE IF NOT EXISTS messages (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      email TEXT,
-      phone TEXT,
-      subject TEXT,
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      name VARCHAR(255) NOT NULL,
+      email VARCHAR(255),
+      phone VARCHAR(20),
+      subject VARCHAR(255),
       message TEXT NOT NULL,
-      type TEXT DEFAULT 'Message', -- Message, Volunteer
-      age INTEGER,
-      area TEXT,
-      designation TEXT,
-      status TEXT DEFAULT 'unread', -- unread, read
+      type VARCHAR(50) DEFAULT 'Message',
+      age INT,
+      area VARCHAR(255),
+      designation VARCHAR(255),
+      status VARCHAR(50) DEFAULT 'unread',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
-  // Add missing columns if they don't exist
-  try {
-    await db.execute("ALTER TABLE messages ADD COLUMN type TEXT DEFAULT 'Message'");
-  } catch (e) {}
-  try {
-    await db.execute("ALTER TABLE messages ADD COLUMN age INTEGER");
-  } catch (e) {}
-  try {
-    await db.execute("ALTER TABLE messages ADD COLUMN area TEXT");
-  } catch (e) {}
-  try {
-    await db.execute("ALTER TABLE messages ADD COLUMN designation TEXT");
-  } catch (e) {}
-
-  // Visitors table (simple log)
+  // Visitors table
   await db.execute(`
     CREATE TABLE IF NOT EXISTS visitors (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      ip TEXT,
-      path TEXT,
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      ip VARCHAR(45),
+      path VARCHAR(255),
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
-
-  // Add missing columns if they don't exist
-  try {
-    await db.execute("ALTER TABLE admins ADD COLUMN role TEXT DEFAULT 'Editor'");
-  } catch (e) {}
-  try {
-    await db.execute("ALTER TABLE admins ADD COLUMN permissions TEXT");
-  } catch (e) {}
 
   // News table
   await db.execute(`
     CREATE TABLE IF NOT EXISTS news (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      title TEXT NOT NULL,
-      slug TEXT UNIQUE NOT NULL,
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      title VARCHAR(255) NOT NULL,
+      slug VARCHAR(255) UNIQUE NOT NULL,
       content TEXT,
       external_link TEXT,
       image_url TEXT,
-      author_id INTEGER,
-      category TEXT,
+      author_id INT,
+      category VARCHAR(100),
       tags TEXT,
       meta_description TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       FOREIGN KEY (author_id) REFERENCES admins(id)
     )
   `);
 
-  // Add missing columns if they don't exist (for existing databases)
-  try {
-    await db.execute("ALTER TABLE admins ADD COLUMN slug TEXT");
-  } catch (e) {}
-  try {
-    await db.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_admins_slug ON admins(slug)");
-  } catch (e) {}
-  try {
-    await db.execute("ALTER TABLE news ADD COLUMN slug TEXT");
-  } catch (e) {}
-  try {
-    await db.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_news_slug ON news(slug)");
-  } catch (e) {}
-  try {
-    await db.execute("ALTER TABLE news ADD COLUMN author_id INTEGER");
-  } catch (e) {}
-  try {
-    await db.execute("ALTER TABLE news ADD COLUMN category TEXT");
-  } catch (e) {}
-  try {
-    await db.execute("ALTER TABLE news ADD COLUMN tags TEXT");
-  } catch (e) {}
-  try {
-    await db.execute("ALTER TABLE news ADD COLUMN meta_description TEXT");
-  } catch (e) {}
-
   // Logs table
   await db.execute(`
     CREATE TABLE IF NOT EXISTS logs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      admin_id INTEGER,
-      action TEXT NOT NULL,
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      admin_id INT,
+      action VARCHAR(100) NOT NULL,
       details TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (admin_id) REFERENCES admins(id)
@@ -169,9 +134,9 @@ export async function initDb() {
   // OTPs table
   await db.execute(`
     CREATE TABLE IF NOT EXISTS otps (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      phone TEXT NOT NULL,
-      code TEXT NOT NULL,
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      phone VARCHAR(20) NOT NULL,
+      code VARCHAR(10) NOT NULL,
       expires_at DATETIME NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
@@ -180,7 +145,7 @@ export async function initDb() {
   // Settings table
   await db.execute(`
     CREATE TABLE IF NOT EXISTS settings (
-      key TEXT PRIMARY KEY,
+      \`key\` VARCHAR(100) PRIMARY KEY,
       value TEXT NOT NULL
     )
   `);
@@ -188,11 +153,11 @@ export async function initDb() {
   // Notices table
   await db.execute(`
     CREATE TABLE IF NOT EXISTS notices (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      title TEXT NOT NULL,
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      title VARCHAR(255) NOT NULL,
       content TEXT,
-      type TEXT DEFAULT 'notice', -- notice, alert, popup
-      is_active INTEGER DEFAULT 1,
+      type VARCHAR(50) DEFAULT 'notice',
+      is_active TINYINT DEFAULT 1,
       expires_at DATETIME,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
@@ -218,12 +183,12 @@ export async function initDb() {
 
   for (const setting of defaultSettings) {
     const exists = await db.execute({
-      sql: "SELECT 1 FROM settings WHERE key = ?",
+      sql: "SELECT 1 FROM settings WHERE `key` = ?",
       args: [setting.key]
     });
     if (exists.rows.length === 0) {
       await db.execute({
-        sql: "INSERT INTO settings (key, value) VALUES (?, ?)",
+        sql: "INSERT INTO settings (`key`, value) VALUES (?, ?)",
         args: [setting.key, setting.value]
       });
     }
@@ -256,25 +221,28 @@ export async function initDb() {
   // Add sample news if empty
   const newsCheck = await db.execute("SELECT 1 FROM news LIMIT 1");
   if (newsCheck.rows.length === 0) {
-    const adminId = (await db.execute("SELECT id FROM admins WHERE is_primary = 1 LIMIT 1")).rows[0].id;
-    await db.execute({
-      sql: `INSERT INTO news (title, slug, content, category, author_id, image_url) VALUES 
-        (?, ?, ?, ?, ?, ?),
-        (?, ?, ?, ?, ?, ?)`,
-      args: [
-        "লুৎফুর রহমান কাজলের নির্বাচনী প্রচারণা শুরু", 
-        "election-campaign-starts", 
-        "<p>কক্সবাজার-৩ আসনে বিএনপি মনোনীত প্রার্থী লুৎফুর রহমান কাজলের নির্বাচনী প্রচারণা উৎসবমুখর পরিবেশে শুরু হয়েছে।</p>", 
-        "খবর", 
-        adminId, 
-        "https://image.mojib.me/uploads/General/1775299892_aece70c0-28d9-4dc1-8e43-3fa8491228a3.png",
-        "রামুতে বিশাল জনসভা অনুষ্ঠিত",
-        "huge-rally-in-ramu",
-        "<p>রামুর ঐতিহাসিক খিজারী স্কুল মাঠে লুৎফুর রহমান কাজলের সমর্থনে এক বিশাল জনসভা অনুষ্ঠিত হয়েছে।</p>",
-        "খবর",
-        adminId,
-        "https://image.mojib.me/uploads/General/1775299892_aece70c0-28d9-4dc1-8e43-3fa8491228a3.png"
-      ]
-    });
+    const adminIdResult = await db.execute("SELECT id FROM admins WHERE is_primary = 1 LIMIT 1");
+    if (adminIdResult.rows.length > 0) {
+      const adminId = adminIdResult.rows[0].id;
+      await db.execute({
+        sql: `INSERT INTO news (title, slug, content, category, author_id, image_url) VALUES 
+          (?, ?, ?, ?, ?, ?),
+          (?, ?, ?, ?, ?, ?)`,
+        args: [
+          "লুৎফুর রহমান কাজলের নির্বাচনী প্রচারণা শুরু", 
+          "election-campaign-starts", 
+          "<p>কক্সবাজার-৩ আসনে বিএনপি মনোনীত প্রার্থী লুৎফুর রহমান কাজলের নির্বাচনী প্রচারণা উৎসবমুখর পরিবেশে শুরু হয়েছে।</p>", 
+          "খবর", 
+          adminId, 
+          "https://image.mojib.me/uploads/General/1775299892_aece70c0-28d9-4dc1-8e43-3fa8491228a3.png",
+          "রামুতে বিশাল জনসভা অনুষ্ঠিত",
+          "huge-rally-in-ramu",
+          "<p>রামুর ঐতিহাসিক খিজারী স্কুল মাঠে লুৎফুর রহমান কাজলের সমর্থনে এক বিশাল জনসভা অনুষ্ঠিত হয়েছে।</p>",
+          "খবর",
+          adminId,
+          "https://image.mojib.me/uploads/General/1775299892_aece70c0-28d9-4dc1-8e43-3fa8491228a3.png"
+        ]
+      });
+    }
   }
 }
