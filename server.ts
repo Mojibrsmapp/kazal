@@ -987,21 +987,6 @@ app.get("/api/voter-search", async (req, res) => {
     next();
   });
 
-  // Vite middleware
-  if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
-    app.use(vite.middlewares);
-  } else if (!process.env.VERCEL) {
-    const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
-  }
-
   // Delete Admin
 app.delete("/api/admin/:id", authenticateToken, async (req: any, res) => {
   if (!req.user.is_primary) {
@@ -1035,6 +1020,21 @@ app.delete("/api/admin/:id", authenticateToken, async (req: any, res) => {
     res.status(500).json({ error: "Failed to delete admin" });
   }
 });
+
+  // Vite middleware
+  if (process.env.NODE_ENV !== "production") {
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: "spa",
+    });
+    app.use(vite.middlewares);
+  } else if (!process.env.VERCEL) {
+    const distPath = path.join(process.cwd(), 'dist');
+    app.use(express.static(distPath));
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(distPath, 'index.html'));
+    });
+  }
 
 const PORT = 3001;
 if (!process.env.VERCEL) {
