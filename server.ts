@@ -26,6 +26,38 @@ export const app = express();
 app.use(express.json());
 
 // Auth Middleware
+// Helper to generate unique slug
+async function generateUniqueSlug(title: string, table: string = "news"): Promise<string> {
+  let slug = title.trim()
+    .replace(/[^\w\u0980-\u09FF\s-]+/g, '') // Keep letters, numbers, spaces, and hyphens
+    .replace(/\s+/g, '-') // Replace spaces with hyphens
+    .toLowerCase();
+  
+  if (!slug) slug = "news-" + Date.now();
+
+  const originalSlug = slug;
+  let counter = 1;
+  
+  while (true) {
+    const result = await db.execute({
+      sql: `SELECT 1 FROM ${table} WHERE slug = ? LIMIT 1`,
+      args: [slug]
+    });
+    
+    if (result.rows.length === 0) {
+      return slug;
+    }
+    
+    slug = `${originalSlug}-${counter}`;
+    counter++;
+    
+    // Safety break
+    if (counter > 100) {
+      return `${originalSlug}-${Date.now()}`;
+    }
+  }
+}
+
 const authenticateToken = (req: any, res: any, next: any) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -133,13 +165,17 @@ app.get("/api/voter-search", async (req, res) => {
       }
 
       // Ensure slug exists
-      if (!admin.slug) {
-        const slug = (admin.full_name as string).toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
-        await db.execute({
-          sql: "UPDATE admins SET slug = ? WHERE id = ?",
-          args: [slug, admin.id]
-        });
-        (admin as any).slug = slug;
+      if (!admin.slug && admin.full_name) {
+        try {
+          const slug = await generateUniqueSlug(admin.full_name as string, "admins");
+          await db.execute({
+            sql: "UPDATE admins SET slug = ? WHERE id = ?",
+            args: [slug, admin.id]
+          });
+          (admin as any).slug = slug;
+        } catch (slugError) {
+          console.error("Slug generation failed:", slugError);
+        }
       }
 
       const token = jwt.sign({ 
@@ -161,8 +197,9 @@ app.get("/api/voter-search", async (req, res) => {
         role: admin.role,
         permissions: admin.permissions
       } });
-    } catch (error) {
-      res.status(500).json({ error: "Login failed" });
+    } catch (error: any) {
+      console.error("Login Error:", error);
+      res.status(500).json({ error: "Login failed", message: error.message });
     }
   });
 
@@ -207,10 +244,9 @@ app.get("/api/voter-search", async (req, res) => {
     if (req.file) {
       imageUrl = await uploadToTelegram(req.file.buffer, req.file.originalname);
     }
-    const slug = title.trim()
-      .replace(/[^\w\u0980-\u09FF\s-]+/g, '') // Keep letters, numbers, spaces, and hyphens
-      .replace(/\s+/g, '-') // Replace spaces with hyphens
-      .toLowerCase();
+    
+    const slug = await generateUniqueSlug(title);
+
     try {
       await db.execute({
         sql: "INSERT INTO news (title, slug, content, external_link, image_url, author_id, category, tags, meta_description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -360,7 +396,7 @@ app.get("/api/voter-search", async (req, res) => {
       avatarUrl = await uploadToTelegram(req.file.buffer, req.file.originalname);
     }
 
-    const slug = full_name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
+    const slug = await generateUniqueSlug(full_name, "admins");
     const hashedPassword = await bcrypt.hash(password, 10);
     try {
       await db.execute({
@@ -386,7 +422,7 @@ app.get("/api/voter-search", async (req, res) => {
         avatarUrl = await uploadToTelegram(req.file.buffer, req.file.originalname);
       }
 
-      const slug = full_name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
+      const slug = await generateUniqueSlug(full_name, "admins");
       let sql = "UPDATE admins SET full_name = ?, email = ?, slug = ?";
       let args = [full_name, email || null, slug];
 

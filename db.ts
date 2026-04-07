@@ -130,7 +130,16 @@ export async function initDb() {
 
   // Add missing columns if they don't exist (for existing databases)
   try {
-    await db.execute("ALTER TABLE admins ADD COLUMN slug TEXT UNIQUE");
+    await db.execute("ALTER TABLE admins ADD COLUMN slug TEXT");
+  } catch (e) {}
+  try {
+    await db.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_admins_slug ON admins(slug)");
+  } catch (e) {}
+  try {
+    await db.execute("ALTER TABLE news ADD COLUMN slug TEXT");
+  } catch (e) {}
+  try {
+    await db.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_news_slug ON news(slug)");
   } catch (e) {}
   try {
     await db.execute("ALTER TABLE news ADD COLUMN author_id INTEGER");
