@@ -1,9 +1,18 @@
 import { app } from "../server.js";
 import { initDb } from "../db.js";
 
-// Initialize DB for Vercel
-initDb().catch(err => {
-  console.error("Database Initialization Error:", err);
-});
+  let isDbInitialized = false;
 
-export default app;
+  const handler = async (req: any, res: any) => {
+    if (!isDbInitialized) {
+      try {
+        await initDb();
+        isDbInitialized = true;
+      } catch (err) {
+        console.error("Database Initialization Error:", err);
+      }
+    }
+    return app(req, res);
+  };
+
+  export default handler;

@@ -63,12 +63,17 @@ const AddGallery: React.FC = () => {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
-        }
+        },
+        timeout: 30000 // 30 seconds timeout
       });
       navigate('/admin/gallery');
     } catch (err: any) {
       console.error('Failed to add to gallery', err);
-      setError(err.response?.data?.error || 'Failed to upload media. Please try again.');
+      if (err.code === 'ECONNABORTED') {
+        setError('Upload timed out. The file might be too large or your connection is slow.');
+      } else {
+        setError(err.response?.data?.error || 'Failed to upload media. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }

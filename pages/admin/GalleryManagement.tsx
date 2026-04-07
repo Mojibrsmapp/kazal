@@ -72,14 +72,19 @@ const GalleryManagement: React.FC = () => {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
-        }
+        },
+        timeout: 30000 // 30 seconds timeout
       });
       setIsModalOpen(false);
       resetForm();
       fetchGallery();
     } catch (err: any) {
       console.error('Failed to add gallery item', err);
-      setError(err.response?.data?.error || 'Failed to upload media. Please try again.');
+      if (err.code === 'ECONNABORTED') {
+        setError('Upload timed out. The file might be too large.');
+      } else {
+        setError(err.response?.data?.error || 'Failed to upload media. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -90,11 +95,13 @@ const GalleryManagement: React.FC = () => {
     try {
       const token = localStorage.getItem('token');
       await axios.delete(`/api/admin/gallery/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 10000 // 10 seconds timeout
       });
       fetchGallery();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to delete item', err);
+      setError(err.response?.data?.error || 'Failed to delete item. Please try again.');
     }
   };
 

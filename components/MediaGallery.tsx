@@ -1,23 +1,41 @@
 
-import React, { useState } from 'react';
-import { GALLERY_IMAGES } from '../constants';
-import { PlayCircle, Image as ImageIcon, Maximize2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { PlayCircle, Image as ImageIcon, Maximize2, Loader2, Video } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 
 const MediaGallery: React.FC = () => {
-  const [activeCategory, setActiveCategory] = useState<'All' | 'Political' | 'Development' | 'Social' | 'Family'>('All');
+  const [items, setItems] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeCategory, setActiveCategory] = useState<'All' | 'রাজনৈতিক' | 'উন্নয়ন' | 'সামাজিক' | 'পারিবারিক'>('All');
 
-  const filteredImages = activeCategory === 'All' 
-    ? GALLERY_IMAGES 
-    : GALLERY_IMAGES.filter(img => img.category === activeCategory);
+  useEffect(() => {
+    fetchGallery();
+  }, []);
+
+  const fetchGallery = async () => {
+    try {
+      setIsLoading(true);
+      const response = await axios.get('/api/gallery');
+      setItems(response.data);
+    } catch (err) {
+      console.error('Failed to fetch gallery', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const filteredItems = activeCategory === 'All' 
+    ? items 
+    : items.filter(item => item.category === activeCategory);
 
   const categories = [
     { id: 'All', label: 'সব' },
-    { id: 'Political', label: 'রাজনৈতিক' },
-    { id: 'Development', label: 'উন্নয়ন' },
-    { id: 'Social', label: 'সামাজিক' },
-    { id: 'Family', label: 'পারিবারিক' }
+    { id: 'রাজনৈতিক', label: 'রাজনৈতিক' },
+    { id: 'উন্নয়ন', label: 'উন্নয়ন' },
+    { id: 'সামাজিক', label: 'সামাজিক' },
+    { id: 'পারিবারিক', label: 'পারিবারিক' }
   ];
 
   return (
@@ -79,48 +97,63 @@ const MediaGallery: React.FC = () => {
         className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
       >
         <AnimatePresence mode="popLayout">
-          {filteredImages.map((item, index) => (
-            <motion.div 
-              key={item.id}
-              layout
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.4, delay: index * 0.05 }}
-              className="relative group overflow-hidden rounded-3xl aspect-square cursor-pointer shadow-xl shadow-slate-200/50 border border-slate-100"
-            >
-              <img 
-                src={item.url} 
-                alt={item.caption} 
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                referrerPolicy="no-referrer"
-              />
-              
-              {/* Category Badge */}
-              <div className="absolute top-4 left-4 z-10">
-                <span className="px-3 py-1 rounded-lg bg-white/90 backdrop-blur-md text-slate-900 text-[10px] font-black uppercase tracking-wider shadow-lg border border-white/20">
-                  {item.category === 'Political' && 'রাজনৈতিক'}
-                  {item.category === 'Development' && 'উন্নয়ন'}
-                  {item.category === 'Social' && 'সামাজিক'}
-                  {item.category === 'Family' && 'পারিবারিক'}
-                </span>
-              </div>
+          {isLoading ? (
+            <div className="col-span-full flex flex-col items-center justify-center py-20">
+              <Loader2 className="animate-spin text-primary mb-4" size={48} />
+              <p className="text-slate-500 font-bold bengali-text">গ্যালারি লোড হচ্ছে...</p>
+            </div>
+          ) : filteredItems.length > 0 ? (
+            filteredItems.map((item, index) => (
+              <motion.div 
+                key={item.id}
+                layout
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.4, delay: index * 0.05 }}
+                className="relative group overflow-hidden rounded-3xl aspect-square cursor-pointer shadow-xl shadow-slate-200/50 border border-slate-100"
+              >
+                {item.type === 'photo' ? (
+                  <img 
+                    src={item.url} 
+                    alt={item.title} 
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-slate-900 flex flex-col items-center justify-center p-6 text-center">
+                    <Video className="text-primary mb-2" size={48} />
+                    <p className="text-white text-xs font-bold truncate w-full">{item.title}</p>
+                  </div>
+                )}
+                
+                {/* Category Badge */}
+                <div className="absolute top-4 left-4 z-10">
+                  <span className="px-3 py-1 rounded-lg bg-white/90 backdrop-blur-md text-slate-900 text-[10px] font-black uppercase tracking-wider shadow-lg border border-white/20">
+                    {item.category}
+                  </span>
+                </div>
 
-              {/* Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col items-center justify-center p-6 text-center">
-                 <motion.div
-                   initial={{ scale: 0.5, opacity: 0 }}
-                   whileHover={{ scale: 1.1 }}
-                   className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white mb-4 border border-white/30"
-                 >
-                   {item.type === 'video' ? <PlayCircle size={32} /> : <Maximize2 size={28} />}
-                 </motion.div>
-                 <p className="text-white font-display font-bold text-lg leading-tight bengali-text transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                   {item.caption}
-                 </p>
-              </div>
-            </motion.div>
-          ))}
+                {/* Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col items-center justify-center p-6 text-center">
+                   <motion.div
+                     initial={{ scale: 0.5, opacity: 0 }}
+                     whileHover={{ scale: 1.1 }}
+                     className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white mb-4 border border-white/30"
+                   >
+                     {item.type === 'video' ? <PlayCircle size={32} /> : <Maximize2 size={28} />}
+                   </motion.div>
+                   <p className="text-white font-display font-bold text-lg leading-tight bengali-text transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                     {item.title}
+                   </p>
+                </div>
+              </motion.div>
+            ))
+          ) : (
+            <div className="col-span-full text-center py-20">
+              <p className="text-slate-500 font-bold bengali-text">কোন তথ্য পাওয়া যায়নি।</p>
+            </div>
+          )}
         </AnimatePresence>
       </motion.div>
     </section>

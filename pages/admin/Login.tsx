@@ -115,7 +115,7 @@ const Login: React.FC = () => {
                   </div>
                 </div>
 
-                {error && (
+                {error && typeof error === 'string' && (
                   <div className={`p-3 rounded-xl text-sm ${error.includes('successful') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                     {error}
                   </div>
