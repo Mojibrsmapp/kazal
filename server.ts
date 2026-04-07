@@ -862,6 +862,57 @@ app.get("/api/voter-search", async (req, res) => {
     }
   });
 
+  app.get("/api/admin/google-analytics", authenticateToken, async (req: any, res) => {
+    try {
+      const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
+      const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+      const propertyId = process.env.GOOGLE_ANALYTICS_PROPERTY_ID;
+
+      if (!clientEmail || !privateKey || !propertyId) {
+        return res.status(400).json({ error: "Google Analytics credentials not configured" });
+      }
+
+      const auth = new google.auth.JWT({
+        email: clientEmail,
+        key: privateKey,
+        scopes: ["https://www.googleapis.com/auth/analytics.readonly"]
+      });
+
+      const analyticsData = google.analyticsdata({ version: "v1beta", auth });
+
+      // Get data for the last 30 days
+      const reportResponse = await analyticsData.properties.runReport({
+        property: `properties/${propertyId}`,
+        requestBody: {
+          dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
+          dimensions: [{ name: "date" }],
+          metrics: [
+            { name: "activeUsers" },
+            { name: "sessions" },
+            { name: "screenPageViews" },
+            { name: "averageSessionDuration" }
+          ],
+        },
+      });
+
+      // Also get real-time data
+      const realtimeResponse = await analyticsData.properties.runRealtimeReport({
+        property: `properties/${propertyId}`,
+        requestBody: {
+          metrics: [{ name: "activeUsers" }],
+        },
+      });
+
+      res.json({
+        report: reportResponse.data,
+        realtime: realtimeResponse.data
+      });
+    } catch (error: any) {
+      console.error("Google Analytics API Error:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch analytics data" });
+    }
+  });
+
   // Admin Permissions
   app.patch("/api/admin/:id/permissions", authenticateToken, async (req: any, res) => {
     if (!req.user.is_primary) return res.status(403).json({ error: "Only primary admins can set permissions" });

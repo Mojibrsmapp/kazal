@@ -31,11 +31,13 @@ import { motion } from 'motion/react';
 const AdminAnalytics: React.FC = () => {
   const [data, setData] = useState<any>(null);
   const [scData, setScData] = useState<any>(null);
+  const [gaData, setGaData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     fetchAnalytics();
     fetchSearchConsole();
+    fetchGoogleAnalytics();
   }, []);
 
   const fetchAnalytics = async () => {
@@ -64,6 +66,18 @@ const AdminAnalytics: React.FC = () => {
     }
   };
 
+  const fetchGoogleAnalytics = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('/api/admin/google-analytics', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setGaData(response.data);
+    } catch (err) {
+      console.error('Failed to fetch Google Analytics data', err);
+    }
+  };
+
   if (isLoading) return (
     <AdminLayout>
       <div className="flex items-center justify-center h-64">
@@ -76,11 +90,33 @@ const AdminAnalytics: React.FC = () => {
     ? (scData.rows.reduce((acc: number, row: any) => acc + row.ctr, 0) / scData.rows.length * 100).toFixed(2) + '%'
     : data?.ga_data?.ctr || '0%';
 
+  // Extract GA4 metrics if available
+  const gaMetrics = gaData?.report?.rows?.reduce((acc: any, row: any) => {
+    acc.activeUsers += parseInt(row.metricValues[0].value);
+    acc.sessions += parseInt(row.metricValues[1].value);
+    acc.pageViews += parseInt(row.metricValues[2].value);
+    return acc;
+  }, { activeUsers: 0, sessions: 0, pageViews: 0 }) || null;
+
   const stats = [
-    { label: 'Total Page Views', value: data?.total_views || 0, icon: <Eye size={20} />, color: 'bg-blue-500', change: '+12%', trend: 'up' },
-    { label: 'Unique Visitors', value: data?.unique_visitors || 0, icon: <Users size={20} />, color: 'bg-primary', change: '+5%', trend: 'up' },
-    { label: 'Today Views', value: data?.today_views || 0, icon: <TrendingUp size={20} />, color: 'bg-green-500', change: '+18%', trend: 'up' },
+    { label: 'Total Page Views', value: gaMetrics?.pageViews || data?.total_views || 0, icon: <Eye size={20} />, color: 'bg-blue-500', change: '+12%', trend: 'up' },
+    { label: 'Unique Visitors', value: gaMetrics?.activeUsers || data?.unique_visitors || 0, icon: <Users size={20} />, color: 'bg-primary', change: '+5%', trend: 'up' },
+    { label: 'Real-time Users', value: gaData?.realtime?.rows?.[0]?.metricValues?.[0]?.value || 0, icon: <TrendingUp size={20} />, color: 'bg-green-500', change: 'Live', trend: 'up' },
     { label: 'Avg. CTR', value: avgCtr, icon: <MousePointer2 size={20} />, color: 'bg-orange-500', change: '-2%', trend: 'down' },
+  ];
+
+  // Prepare chart data from GA4
+  const chartData = gaData?.report?.rows?.map((row: any) => ({
+    name: row.dimensionValues[0].value.slice(6, 8) + '/' + row.dimensionValues[0].value.slice(4, 6),
+    views: parseInt(row.metricValues[2].value)
+  })).reverse() || [
+    { name: 'Mon', views: 400 },
+    { name: 'Tue', views: 300 },
+    { name: 'Wed', views: 500 },
+    { name: 'Thu', views: 280 },
+    { name: 'Fri', views: 590 },
+    { name: 'Sat', views: 800 },
+    { name: 'Sun', views: 600 },
   ];
 
   return (
@@ -180,15 +216,7 @@ const AdminAnalytics: React.FC = () => {
         </div>
         <div className="h-80 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={[
-              { name: 'Mon', views: 400 },
-              { name: 'Tue', views: 300 },
-              { name: 'Wed', views: 500 },
-              { name: 'Thu', views: 280 },
-              { name: 'Fri', views: 590 },
-              { name: 'Sat', views: 800 },
-              { name: 'Sun', views: 600 },
-            ]}>
+            <AreaChart data={chartData}>
               <defs>
                 <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#059669" stopOpacity={0.1}/>
