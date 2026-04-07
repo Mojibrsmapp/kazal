@@ -728,7 +728,7 @@ app.get("/api/voter-search", async (req, res) => {
     try {
       for (const [key, value] of Object.entries(settings)) {
         await db.execute({
-          sql: "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)",
+          sql: "REPLACE INTO settings (`key`, value) VALUES (?, ?)",
           args: [key, typeof value === 'string' ? value : JSON.stringify(value)]
         });
       }
@@ -747,7 +747,7 @@ app.get("/api/voter-search", async (req, res) => {
     try {
       const logoUrl = await uploadToTelegram(req.file.buffer, req.file.originalname);
       await db.execute({
-        sql: "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)",
+        sql: "REPLACE INTO settings (`key`, value) VALUES (?, ?)",
         args: ["site_logo", logoUrl]
       });
       await logAction(req.user.id, "UPDATE_LOGO", "Updated website logo");
@@ -819,7 +819,7 @@ app.get("/api/voter-search", async (req, res) => {
   app.get("/api/admin/analytics", authenticateToken, async (req: any, res) => {
     try {
       const settingsResult = await db.execute({
-        sql: "SELECT value FROM settings WHERE key = ?",
+        sql: "SELECT value FROM settings WHERE `key` = ?",
         args: ["google_analytics_config"]
       });
 

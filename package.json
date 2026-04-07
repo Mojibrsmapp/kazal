@@ -4,13 +4,12 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "start": "node server.ts",
+    "start": "tsx server.ts",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@libsql/client": "^0.17.2",
     "@tailwindcss/vite": "^4.0.0-alpha.25",
     "@types/bcryptjs": "^2.4.6",
     "@types/express": "^5.0.6",
